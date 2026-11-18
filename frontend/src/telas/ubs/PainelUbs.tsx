@@ -3,7 +3,7 @@ import { Moldura, useAba, type Aba } from '../../app/Moldura'
 import { api, mensagemDe } from '../../lib/api'
 import type { Clinica, Dossie, Especialidade, Medico, Microarea, Municipio, Perfil, StatusDossie, Usuario } from '../../lib/tipos'
 import { useAvisar } from '../../ui/avisos'
-import { Botao, CabecalhoPagina, Campo, Carregando, Celula, Confirmacao, Linha, Marcador, Modal, Selecao, Selo, Superficie, Tabela, Vazio } from '../../ui/base'
+import { Botao, CabecalhoPagina, LegendaManchester, Campo, Carregando, Celula, Confirmacao, Linha, Marcador, Modal, Selecao, Selo, Superficie, Tabela, Vazio } from '../../ui/base'
 import { DetalheDossie, DocumentoLaudo, ListaCasos } from '../comum/Clinico'
 import Pacientes from '../comum/Pacientes'
 
@@ -52,7 +52,7 @@ function Dossies() {
 
   return (
     <>
-      <CabecalhoPagina titulo="Dossiês recebidos" descricao="Revise o risco e encaminhe cada caso para a especialidade certa. Os mais graves aparecem primeiro." />
+      <CabecalhoPagina titulo="Dossiês recebidos" descricao="Revise o risco e encaminhe cada caso para a especialidade certa. Os mais graves aparecem primeiro." acao={<LegendaManchester />} />
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar por situação">
         {FILTROS.map((f) => (
           <button

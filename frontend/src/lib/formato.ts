@@ -16,14 +16,6 @@ export const NOMES_STATUS: Record<StatusDossie, string> = {
   LAUDO_EMITIDO: 'Laudo emitido',
 }
 
-export type NivelRisco = 'alto' | 'medio' | 'baixo'
-
-export function risco(d: { prioritario: boolean; escore: number }): { nivel: NivelRisco; rotulo: string } {
-  if (d.prioritario) return { nivel: 'alto', rotulo: 'Urgente' }
-  if (Number(d.escore) >= 25) return { nivel: 'medio', rotulo: 'Atenção' }
-  return { nivel: 'baixo', rotulo: 'Baixo risco' }
-}
-
 export function textoPrazo(prazo: Prazo | null | undefined): { texto: string; tom: 'neutro' | 'alerta' | 'perigo' } | null {
   if (!prazo || prazo.situacao === 'SEM_PRAZO' || prazo.minutosRestantes == null) return null
   const minutos = Math.abs(prazo.minutosRestantes)

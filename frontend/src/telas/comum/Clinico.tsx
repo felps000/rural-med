@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { api, baixarArquivo, enviarArquivo, mensagemDe } from '../../lib/api'
-import { dataHora, NOMES_STATUS, risco } from '../../lib/formato'
+import { dataHora, NOMES_STATUS } from '../../lib/formato'
+import { classificar } from '../../lib/manchester'
 import type { Anexo, AtendimentoHistorico, DadosTriagem, Dossie, Laudo, Prescricao } from '../../lib/tipos'
 import { useAvisar } from '../../ui/avisos'
 import { Botao, Carregando, Escore, Selo, SeloPrazo, SeloRisco, Superficie, Vazio } from '../../ui/base'
@@ -17,14 +18,14 @@ export function ListaCasos({ casos, aoAbrir, vazio }: { casos: Dossie[]; aoAbrir
             onClick={() => aoAbrir(d)}
             className="flex w-full items-center gap-4 rounded-[22px] bg-white p-4 text-left shadow-e1 ring-1 ring-black/[0.03] transition-[box-shadow,transform] duration-150 ease-saida hover:shadow-e2 active:scale-[0.995] sm:p-5"
           >
-            <Escore escore={d.escore} prioritario={d.prioritario} />
+            <Escore caso={d} />
             <div className="min-w-0 flex-1">
               <p className="font-semibold">
                 {d.paciente.nome} <span className="font-normal text-tinta-suave">· {d.paciente.idade} anos</span>
               </p>
               <p className="truncate text-tinta-suave">{d.dadosTriagem.queixaPrincipal}</p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <SeloRisco prioritario={d.prioritario} escore={d.escore} />
+                <SeloRisco caso={d} />
                 <Selo>{NOMES_STATUS[d.status]}</Selo>
                 <SeloPrazo prazo={d.prazo} />
                 {d.especialidade && <Selo>{d.especialidade.nome}</Selo>}
@@ -64,7 +65,7 @@ function SinaisVitais({ t }: { t: DadosTriagem }) {
 
 /** Resumo clínico de um caso: risco, sinais vitais, critérios do escore e exames. */
 export function DetalheDossie({ d }: { d: Dossie }) {
-  const r = risco(d)
+  const r = classificar(d)
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4">
@@ -79,7 +80,7 @@ export function DetalheDossie({ d }: { d: Dossie }) {
           </div>
         </div>
         <div className="text-center">
-          <Escore escore={d.escore} prioritario={d.prioritario} grande />
+          <Escore caso={d} grande />
           <p className="mt-1 text-[12px] font-medium text-tinta-suave">{r.rotulo}</p>
         </div>
       </div>
@@ -303,7 +304,7 @@ export function HistoricoPaciente({ pacienteId }: { pacienteId: number }) {
           <p className="mt-0.5 font-semibold">{d.dadosTriagem.queixaPrincipal}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <Selo>{NOMES_STATUS[d.status]}</Selo>
-            <SeloRisco prioritario={d.prioritario} escore={d.escore} />
+            <SeloRisco caso={d} />
             <Selo>{Math.round(d.escore)} pontos</Selo>
           </div>
           <p className="mt-1.5 text-[14px] text-tinta-suave">

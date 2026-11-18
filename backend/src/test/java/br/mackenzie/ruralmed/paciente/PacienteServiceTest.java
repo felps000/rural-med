@@ -208,4 +208,18 @@ class PacienteServiceTest {
                     .isInstanceOf(RegraNegocioException.class).hasMessage("Escolha a microárea do paciente");
         }
     }
+
+    @Test
+    @DisplayName("Cartão SUS usa o CPF; sem CPF, o CNS antigo")
+    void cartaoSusUsaOCpfQuandoExiste() {
+        Paciente comCpf = new Paciente();
+        comCpf.setCpf("52998224725");
+        comCpf.setCns("123456789012345");
+        Paciente soCns = new Paciente();
+        soCns.setCns("123456789012345");
+
+        assertThat(comCpf.getCartaoSus()).isEqualTo("52998224725");
+        assertThat(soCns.getCartaoSus()).isEqualTo("123456789012345");
+        assertThat(new Paciente().getCartaoSus()).isNull();
+    }
 }

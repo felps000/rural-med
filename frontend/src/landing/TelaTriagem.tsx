@@ -1,4 +1,5 @@
 import { calcularEscore, type DadosTriagem } from '../lib/escore'
+import { classificar } from '../lib/manchester'
 
 /** Caso de demonstração: um paciente idoso com falta de ar. Valores fictícios, regra real. */
 const IDADE = 71
@@ -45,6 +46,7 @@ export default function TelaTriagem({ progresso, saturacaoManual = null }: Props
     comorbidades: t('comorbidade') >= 1 ? ['hipertensão'] : [],
   }
   const escore = calcularEscore(dados, IDADE)
+  const classe = classificar({ escore: escore.pontos, prioritario: escore.prioritario, dadosTriagem: dados })
   const mostrarResultado = t('resultado') > 0 || saturacaoManual !== null
   const opacidadeResultado = saturacaoManual !== null ? 1 : t('resultado')
 
@@ -102,19 +104,16 @@ export default function TelaTriagem({ progresso, saturacaoManual = null }: Props
       </div>
 
       <div
-        className="mt-auto rounded-2xl px-3 py-3 transition-colors duration-200"
+        className="mt-auto rounded-2xl bg-osso px-3 py-3 transition-colors duration-200"
         style={{
           opacity: mostrarResultado ? opacidadeResultado : 0,
           transform: `translateY(${(1 - opacidadeResultado) * 8}px)`,
-          background: escore.prioritario ? 'var(--color-ambar-fundo)' : 'var(--color-osso)',
         }}
         aria-live="polite"
       >
         <div className="flex items-baseline justify-between">
           <span className="text-[11px] font-medium text-tinta-suave">Escore de risco</span>
-          {escore.prioritario && (
-            <span className="rounded-full bg-ambar px-2 py-0.5 text-[11px] font-semibold text-white">Prioritário</span>
-          )}
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${classe.classes}`}>{classe.rotulo}</span>
         </div>
         <p className="tabular text-3xl font-semibold tracking-tight">{escore.pontos}</p>
         <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-tinta-suave">{escore.fatores.join(' · ')}</p>

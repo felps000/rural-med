@@ -56,6 +56,8 @@ export interface Paciente {
   nome: string
   cpf: string | null
   cns: string | null
+  /** CPF (Lei 14.534/2023) ou, sem CPF, o CNS antigo. */
+  cartaoSus: string | null
   dataNascimento: string
   telefone: string | null
   consentimentoEm: string | null

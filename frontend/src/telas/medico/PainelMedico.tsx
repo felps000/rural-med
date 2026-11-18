@@ -4,7 +4,7 @@ import { api, mensagemDe } from '../../lib/api'
 import { dataHora, idRuralMed } from '../../lib/formato'
 import type { Cid, Dossie, Laudo, Medicamento, PacienteResumo, Prescricao } from '../../lib/tipos'
 import { useAvisar } from '../../ui/avisos'
-import { AreaTexto, Botao, CabecalhoPagina, Campo, Carregando, Celula, Linha, Marcador, Modal, Selecao, Superficie, Tabela, Vazio } from '../../ui/base'
+import { AreaTexto, Botao, LegendaManchester, CabecalhoPagina, Campo, Carregando, Celula, Linha, Marcador, Modal, Selecao, Superficie, Tabela, Vazio } from '../../ui/base'
 import { DetalheDossie, DocumentoLaudo, HistoricoPaciente, ItemPrescricao, ListaCasos } from '../comum/Clinico'
 
 const ABAS: Aba[] = [
@@ -57,7 +57,7 @@ function Fila({ versao, aoEmitir }: { versao: number; aoEmitir: (laudo: Laudo) =
 
   return (
     <>
-      <CabecalhoPagina titulo="Fila de casos" descricao="Ordenada por risco. Casos prioritários têm até 24 horas para receber laudo." />
+      <CabecalhoPagina titulo="Fila de casos" descricao="Ordenada por risco. Casos prioritários têm até 24 horas para receber laudo." acao={<LegendaManchester />} />
       {casos === null ? <Carregando /> : <ListaCasos casos={casos} aoAbrir={setAberto} vazio="Nenhum caso esperando laudo. Bom trabalho." />}
 
       <Modal aberto={aberto !== null} aoFechar={() => setAberto(null)} titulo="Atendimento" largo>

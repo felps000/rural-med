@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Moldura, useAba, type Aba } from '../../app/Moldura'
 import { api, mensagemDe } from '../../lib/api'
 import { calcularEscore } from '../../lib/escore'
+import { classificar } from '../../lib/manchester'
 import type { Dossie, Paciente, ResultadoSincronizacao } from '../../lib/tipos'
 import { useAvisar } from '../../ui/avisos'
 import { AreaTexto, Botao, CabecalhoPagina, Campo, Carregando, Escore, Marcador, Modal, Selecao, Superficie } from '../../ui/base'
@@ -276,9 +277,9 @@ function NovaTriagem({ aoSalvar }: { aoSalvar: (t: TriagemLocal) => void }) {
             {previa ? (
               <>
                 <div className="mt-3 flex justify-center">
-                  <Escore escore={previa.pontos} prioritario={previa.prioritario} grande />
+                  <Escore caso={{ escore: previa.pontos, prioritario: previa.prioritario, dadosTriagem: valores }} grande />
                 </div>
-                <p className="mt-2 font-semibold">{previa.prioritario ? 'Caso prioritário' : 'Sem prioridade'}</p>
+                <p className="mt-2 font-semibold">{classificar({ escore: previa.pontos, prioritario: previa.prioritario, dadosTriagem: valores }).rotulo}</p>
                 {previa.fatores.length > 0 && <p className="mt-2 text-[12px] leading-snug text-tinta-suave">{previa.fatores.join(' · ')}</p>}
               </>
             ) : (

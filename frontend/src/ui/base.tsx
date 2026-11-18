@@ -8,8 +8,9 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react'
-import { risco as calcularRisco, textoPrazo } from '../lib/formato'
-import type { Prazo } from '../lib/tipos'
+import { textoPrazo } from '../lib/formato'
+import { classificar, CLASSIFICACOES } from '../lib/manchester'
+import type { DadosTriagem, Prazo } from '../lib/tipos'
 
 /* Botões: um primário por tela; o resto é secundário ou discreto. */
 type Variante = 'primario' | 'secundario' | 'discreto' | 'perigo'
@@ -122,9 +123,30 @@ export function Selo({ tom = 'neutro', children }: { tom?: TomSelo; children: Re
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium whitespace-nowrap ${TONS[tom]}`}>{children}</span>
 }
 
-export function SeloRisco({ prioritario, escore }: { prioritario: boolean; escore: number }) {
-  const r = calcularRisco({ prioritario, escore })
-  return <Selo tom={r.nivel === 'alto' ? 'perigo' : r.nivel === 'medio' ? 'alerta' : 'verde'}>{r.rotulo}</Selo>
+/** Um caso classificado: escore e prioridade do servidor, mais os sinais vitais. */
+export interface CasoClassificavel {
+  escore: number
+  prioritario: boolean
+  dadosTriagem?: Partial<DadosTriagem> | null
+}
+
+/** Selo com a cor e o nome da classificação de Manchester. */
+export function SeloRisco({ caso }: { caso: CasoClassificavel }) {
+  const c = classificar(caso)
+  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-semibold whitespace-nowrap ${c.classes}`}>{c.rotulo}</span>
+}
+
+/** Número do escore num círculo com a cor de Manchester. */
+export function Escore({ caso, grande = false }: { caso: CasoClassificavel; grande?: boolean }) {
+  const c = classificar(caso)
+  return (
+    <span
+      title={c.rotulo}
+      className={`tabular inline-flex shrink-0 items-center justify-center rounded-full font-semibold ${c.classes} ${grande ? 'size-16 text-2xl' : 'size-12 text-lg'}`}
+    >
+      {Math.round(caso.escore)}
+    </span>
+  )
 }
 
 export function SeloPrazo({ prazo }: { prazo: Prazo | null | undefined }) {
@@ -133,14 +155,14 @@ export function SeloPrazo({ prazo }: { prazo: Prazo | null | undefined }) {
   return <Selo tom={p.tom === 'perigo' ? 'perigo' : p.tom === 'alerta' ? 'alerta' : 'neutro'}>{p.texto}</Selo>
 }
 
-/** Número do escore em um círculo com a cor do risco. */
-export function Escore({ escore, prioritario, grande = false }: { escore: number; prioritario: boolean; grande?: boolean }) {
-  const r = calcularRisco({ prioritario, escore })
-  const cor = r.nivel === 'alto' ? 'bg-[#fdeceb] text-[#a3261b]' : r.nivel === 'medio' ? 'bg-ambar-fundo text-ambar' : 'bg-musgo/30 text-floresta'
+/** Legenda das 5 cores, para as listas de casos. */
+export function LegendaManchester() {
   return (
-    <span className={`tabular inline-flex shrink-0 items-center justify-center rounded-full font-semibold ${cor} ${grande ? 'size-16 text-2xl' : 'size-12 text-lg'}`}>
-      {Math.round(escore)}
-    </span>
+    <div className="flex flex-wrap items-center gap-1.5" aria-label="Legenda da classificação de risco">
+      {Object.values(CLASSIFICACOES).map((c) => (
+        <span key={c.cor} className={`rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${c.classes}`}>{c.rotulo}</span>
+      ))}
+    </div>
   )
 }
 

@@ -51,14 +51,17 @@ export default function Pacientes({ aoMudar }: { aoMudar?: (lista: Paciente[]) =
       ) : pacientes.length === 0 ? (
         <Vazio>Nenhum paciente cadastrado.</Vazio>
       ) : (
-        <Tabela colunas={['Nome', 'Idade', 'Microárea', 'Consentimento', 'Situação', '']}>
+        <Tabela colunas={['Nome', 'Cartão SUS', 'Idade', 'Microárea', 'Consentimento', 'Situação', '']}>
           {pacientes.map((p) => (
             <Linha key={p.id}>
               <Celula>
                 <span className="block font-medium">{p.nome}</span>
                 <code className="text-[11px] text-tinta-suave">{idRuralMed(p)}</code>
               </Celula>
-              <Celula rotulo="Idade">{p.idade} anos</Celula>
+              <Celula rotulo="Cartão SUS">
+                {p.cartaoSus ? <span className="tabular whitespace-nowrap">{formatarSus(p.cartaoSus)}</span> : <span className="text-tinta-suave">Usa o ID RuralMed</span>}
+              </Celula>
+              <Celula rotulo="Idade"><span className="whitespace-nowrap">{p.idade} anos</span></Celula>
               <Celula rotulo="Microárea">{p.microarea.nome}</Celula>
               <Celula rotulo="Consentimento">{p.consentimentoEm ? 'Sim' : <Selo tom="alerta">Pendente</Selo>}</Celula>
               <Celula rotulo="Situação">{p.ativo ? 'Ativo' : <Selo tom="apagado">Inativo</Selo>}</Celula>
@@ -132,12 +135,12 @@ function FormPaciente({ paciente, ehUbs, aoSalvar }: { paciente: Paciente | null
     const cnsLimpo = cns.replace(/\s/g, '')
     if (/[^0-9.\-\s]/.test(cpf) || /[^0-9\s]/.test(cns)) return setErro('CPF e Cartão SUS devem conter apenas números.')
     if (cpfLimpo && !cpfValido(cpfLimpo)) return setErro('Confira o CPF: os dígitos verificadores não batem.')
-    if (cnsLimpo && !/^\d{15}$/.test(cnsLimpo)) return setErro('O Cartão SUS (CNS) deve ter 15 números.')
+    if (!cpfLimpo && cnsLimpo && !/^\d{15}$/.test(cnsLimpo)) return setErro('O cartão SUS antigo (CNS) tem 15 números.')
 
     const corpo = {
       nome,
       cpf: cpfLimpo || null,
-      cns: cnsLimpo || null,
+      cns: cpfLimpo ? null : cnsLimpo || null,
       dataNascimento: nascimento,
       telefone,
       consentimentoEm: consentiu ? (paciente?.consentimentoEm ?? new Date().toISOString()) : null,
@@ -168,12 +171,21 @@ function FormPaciente({ paciente, ehUbs, aoSalvar }: { paciente: Paciente | null
       <Campo rotulo="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} minLength={2} maxLength={120} required />
       <div className="grid gap-4 sm:grid-cols-2">
         <Campo rotulo="CPF (opcional)" value={cpf} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" maxLength={14} placeholder="000.000.000-00" autoComplete="off" />
-        <Campo rotulo="Cartão SUS (opcional)" value={cns} onChange={(e) => setCns(e.target.value)} inputMode="numeric" maxLength={15} placeholder="15 números" autoComplete="off" ajuda="Numeração diferente do CPF." />
+        <Campo
+          rotulo="Cartão SUS"
+          value={cpf.trim() ? cpf : cns}
+          onChange={(e) => setCns(e.target.value)}
+          readOnly={Boolean(cpf.trim())}
+          inputMode="numeric"
+          maxLength={15}
+          placeholder="Só se não tiver CPF: cartão antigo, 15 números"
+          autoComplete="off"
+          ajuda={cpf.trim() ? 'É o próprio CPF (Lei 14.534/2023).' : 'Sem CPF nem cartão, o paciente usa o ID RuralMed.'}
+        />
         <Campo rotulo="Data de nascimento" type="date" value={nascimento} max={hojeIso()} onChange={(e) => setNascimento(e.target.value)} required />
         <Campo rotulo="Telefone" type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} maxLength={20} placeholder="(00) 00000-0000" />
       </div>
       {paciente && <Campo rotulo="ID RuralMed" value={idRuralMed(paciente)} readOnly />}
-      <p className="text-[12px] text-tinta-suave">Sem documentos, o RuralMed gera um identificador próprio para o paciente.</p>
       <div className="space-y-3 rounded-2xl bg-white p-4">
         <Marcador rotulo="O paciente consentiu com o atendimento por telessaúde (Lei 14.510/2022)" checked={consentiu} onChange={(e) => setConsentiu(e.target.checked)} />
         <Marcador rotulo="Cadastro ativo" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} />
@@ -184,4 +196,11 @@ function FormPaciente({ paciente, ehUbs, aoSalvar }: { paciente: Paciente | null
       </div>
     </form>
   )
+}
+
+/** CPF com pontuação; CNS em blocos de 3-4-4-4. */
+function formatarSus(numero: string) {
+  if (numero.length === 11) return numero.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+  if (numero.length === 15) return numero.replace(/(\d{3})(\d{4})(\d{4})(\d{4})/, '$1 $2 $3 $4')
+  return numero
 }

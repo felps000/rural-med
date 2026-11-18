@@ -44,6 +44,15 @@ public class Paciente {
         return dataNascimento == null ? 0 : Period.between(dataNascimento, LocalDate.now()).getYears();
     }
 
+    /**
+     * Número do SUS do paciente. Pela Lei 14.534/2023 o CPF é o número único de identificação,
+     * inclusive no SUS; o CNS de 15 dígitos fica só para quem tem o cartão antigo e não tem CPF.
+     * Sem nenhum dos dois, o paciente é identificado pelo ID RuralMed.
+     */
+    public String getCartaoSus() {
+        return cpf != null ? cpf : cns;
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
