@@ -71,6 +71,10 @@ public class UsuarioService {
             throw new RegraNegocioException("Este CPF já está vinculado a outro usuário");
         }
         if (form.perfil() == null) throw new RegraNegocioException("Escolha o perfil do usuário");
+        // O Gestor vê os repasses financeiros de todos os médicos: não é criado pela UBS.
+        if (form.perfil() == Perfil.GESTOR) {
+            throw new RegraNegocioException("O perfil Gestor é cadastrado pela administração do sistema");
+        }
         if (form.senha() == null || form.senha().length() < 6) {
             throw new RegraNegocioException("A senha precisa ter pelo menos 6 caracteres");
         }

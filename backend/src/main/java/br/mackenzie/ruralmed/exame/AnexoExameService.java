@@ -3,6 +3,7 @@ package br.mackenzie.ruralmed.exame;
 import br.mackenzie.ruralmed.auth.AuthService;
 import br.mackenzie.ruralmed.comum.AcessoNegadoException;
 import br.mackenzie.ruralmed.comum.RegraNegocioException;
+import br.mackenzie.ruralmed.paciente.AcessoMedico;
 import br.mackenzie.ruralmed.triagem.Dossie;
 import br.mackenzie.ruralmed.triagem.DossieRepository;
 import br.mackenzie.ruralmed.usuario.Perfil;
@@ -25,10 +26,13 @@ public class AnexoExameService {
 
     private final AnexoExameRepository anexoRepository;
     private final DossieRepository dossieRepository;
+    private final AcessoMedico acessoMedico;
 
-    public AnexoExameService(AnexoExameRepository anexoRepository, DossieRepository dossieRepository) {
+    public AnexoExameService(AnexoExameRepository anexoRepository, DossieRepository dossieRepository,
+                             AcessoMedico acessoMedico) {
         this.anexoRepository = anexoRepository;
         this.dossieRepository = dossieRepository;
+        this.acessoMedico = acessoMedico;
     }
 
     @Transactional(readOnly = true)
@@ -85,6 +89,9 @@ public class AnexoExameService {
         if (perfil == Perfil.ACS
                 && !dossie.getPaciente().getMicroarea().getId().equals(sessao.microareaId())) {
             throw new AcessoNegadoException("O ACS só pode acessar exames da própria microárea");
+        }
+        if (sessao.usuario().getPerfil() == Perfil.MEDICO) {
+            acessoMedico.verificar(sessao, dossie.getPaciente().getId());
         }
         return dossie;
     }

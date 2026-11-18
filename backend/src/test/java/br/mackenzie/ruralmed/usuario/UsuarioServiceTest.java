@@ -109,6 +109,14 @@ class UsuarioServiceTest {
     @Nested
     @DisplayName("Cadastros recusados")
     class Falhas {
+        @Test
+        void naoPermiteQueAUbsCrieGestor() {
+            assertThatThrownBy(() -> service.criar(form(Perfil.GESTOR, "senha-teste", null)))
+                    .isInstanceOf(RegraNegocioException.class)
+                    .hasMessage("O perfil Gestor é cadastrado pela administração do sistema");
+            verify(usuarios, never()).save(any());
+        }
+
         @ParameterizedTest
         @NullAndEmptySource
         @ValueSource(strings = "12345")

@@ -15,11 +15,14 @@ public class PacienteController {
     private final AuthService authService;
     private final PacienteService pacienteService;
     private final TriagemService triagemService;
+    private final AcessoMedico acessoMedico;
 
-    public PacienteController(AuthService authService, PacienteService pacienteService, TriagemService triagemService) {
+    public PacienteController(AuthService authService, PacienteService pacienteService, TriagemService triagemService,
+                              AcessoMedico acessoMedico) {
         this.authService = authService;
         this.pacienteService = pacienteService;
         this.triagemService = triagemService;
+        this.acessoMedico = acessoMedico;
     }
 
     @GetMapping
@@ -38,8 +41,8 @@ public class PacienteController {
     @GetMapping("/localizar")
     public PacienteService.PacienteResumo localizar(@RequestParam String identificador,
                            @RequestHeader(value = "Authorization", required = false) String token) {
-        authService.exigir(token, Perfil.MEDICO);
-        return pacienteService.localizarParaMedico(identificador);
+        AuthService.Sessao sessao = authService.exigir(token, Perfil.MEDICO);
+        return pacienteService.localizarParaMedico(identificador, sessao);
     }
 
     @PostMapping
@@ -67,7 +70,9 @@ public class PacienteController {
     public List<TriagemService.AtendimentoHistorico> historico(@PathVariable Long id,
                                   @RequestHeader(value = "Authorization", required = false) String token) {
         AuthService.Sessao sessao = authService.exigir(token, Perfil.ACS, Perfil.UBS, Perfil.MEDICO);
-        if (sessao.usuario().getPerfil() != Perfil.MEDICO) {
+        if (sessao.usuario().getPerfil() == Perfil.MEDICO) {
+            acessoMedico.verificar(sessao, id);
+        } else {
             pacienteService.buscar(id, sessao); // aplica a RN02 para o ACS
         }
         return triagemService.historico(id, sessao);

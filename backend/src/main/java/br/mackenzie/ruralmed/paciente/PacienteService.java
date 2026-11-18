@@ -20,10 +20,13 @@ public class PacienteService {
 
     private final PacienteRepository pacienteRepository;
     private final MicroareaRepository microareaRepository;
+    private final AcessoMedico acessoMedico;
 
-    public PacienteService(PacienteRepository pacienteRepository, MicroareaRepository microareaRepository) {
+    public PacienteService(PacienteRepository pacienteRepository, MicroareaRepository microareaRepository,
+                           AcessoMedico acessoMedico) {
         this.pacienteRepository = pacienteRepository;
         this.microareaRepository = microareaRepository;
+        this.acessoMedico = acessoMedico;
     }
 
     public List<Paciente> listar(AuthService.Sessao sessao) {
@@ -42,7 +45,8 @@ public class PacienteService {
         return paciente;
     }
 
-    public PacienteResumo localizarParaMedico(String identificador) {
+    /** Localizar por identificador exato libera o histórico desse paciente para o médico. */
+    public PacienteResumo localizarParaMedico(String identificador, AuthService.Sessao sessao) {
         String termo = identificador == null ? "" : identificador.trim();
         if (termo.isBlank()) {
             throw new RegraNegocioException("Informe o CPF ou o ID RuralMed completo");
@@ -60,6 +64,7 @@ public class PacienteService {
                     .orElseThrow(() -> new RegraNegocioException("Paciente não encontrado"));
         }
 
+        acessoMedico.liberar(sessao.usuario().getId(), paciente.getId());
         return new PacienteResumo(paciente.getId(), paciente.getIdentificadorUnico(),
                 paciente.getNome(), paciente.getIdade());
     }

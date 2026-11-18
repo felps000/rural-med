@@ -3,6 +3,7 @@ package br.mackenzie.ruralmed.laudo;
 import br.mackenzie.ruralmed.auth.AuthService;
 import br.mackenzie.ruralmed.cadastro.Especialidade;
 import br.mackenzie.ruralmed.comum.AcessoNegadoException;
+import br.mackenzie.ruralmed.paciente.AcessoMedico;
 import br.mackenzie.ruralmed.triagem.Dossie;
 import br.mackenzie.ruralmed.triagem.DossieRepository;
 import br.mackenzie.ruralmed.triagem.StatusDossie;
@@ -24,7 +25,7 @@ class PrescricaoServiceTest {
     private final DossieRepository dossies = mock(DossieRepository.class);
     private final MedicoRepository medicos = mock(MedicoRepository.class);
     private final ReceitaRepository receitas = mock(ReceitaRepository.class);
-    private final PrescricaoService service = new PrescricaoService(dossies, medicos, receitas);
+    private final PrescricaoService service = new PrescricaoService(dossies, medicos, receitas, new AcessoMedico(dossies));
     private final Usuario usuario = new Usuario();
     private final AuthService.Sessao sessao = new AuthService.Sessao("token", usuario, null, 7L);
     private final Dossie dossie = new Dossie();

@@ -290,9 +290,12 @@ function FormUsuario({ aoSalvar }: { aoSalvar: () => void }) {
         <Campo rotulo="CPF (só números)" inputMode="numeric" pattern="\d{11}" maxLength={11} value={f.cpf} onChange={(e) => mudar('cpf', e.target.value)} required />
         <Campo rotulo="Senha inicial" type="password" minLength={6} value={f.senha} onChange={(e) => mudar('senha', e.target.value)} autoComplete="new-password" required />
         <Selecao rotulo="Perfil" value={f.perfil} onChange={(e) => mudar('perfil', e.target.value)}>
-          {Object.entries(NOMES_PERFIL).map(([valor, rotulo]) => (
-            <option key={valor} value={valor}>{rotulo}</option>
-          ))}
+          {/* O Gestor é cadastrado pela administração do sistema, não pela UBS. */}
+          {Object.entries(NOMES_PERFIL)
+            .filter(([valor]) => valor !== 'GESTOR')
+            .map(([valor, rotulo]) => (
+              <option key={valor} value={valor}>{rotulo}</option>
+            ))}
         </Selecao>
       </div>
       {f.perfil === 'ACS' && (

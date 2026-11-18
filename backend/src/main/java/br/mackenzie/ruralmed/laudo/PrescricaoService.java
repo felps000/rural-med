@@ -4,6 +4,7 @@ import br.mackenzie.ruralmed.auth.AuthService;
 import br.mackenzie.ruralmed.comum.AcessoNegadoException;
 import br.mackenzie.ruralmed.comum.RegraNegocioException;
 import br.mackenzie.ruralmed.comum.RegrasDeNegocio;
+import br.mackenzie.ruralmed.paciente.AcessoMedico;
 import br.mackenzie.ruralmed.triagem.Dossie;
 import br.mackenzie.ruralmed.triagem.DossieRepository;
 import br.mackenzie.ruralmed.triagem.StatusDossie;
@@ -52,11 +53,14 @@ public class PrescricaoService {
     private final MedicoRepository medicoRepository;
     private final ReceitaRepository receitaRepository;
 
+    private final AcessoMedico acessoMedico;
+
     public PrescricaoService(DossieRepository dossieRepository, MedicoRepository medicoRepository,
-                             ReceitaRepository receitaRepository) {
+                             ReceitaRepository receitaRepository, AcessoMedico acessoMedico) {
         this.dossieRepository = dossieRepository;
         this.medicoRepository = medicoRepository;
         this.receitaRepository = receitaRepository;
+        this.acessoMedico = acessoMedico;
     }
 
     public List<MedicamentoReferencia> buscarMedicamentos(String busca) {
@@ -139,6 +143,9 @@ public class PrescricaoService {
         if (sessao.usuario().getPerfil() == Perfil.ACS
                 && !dossie.getPaciente().getMicroarea().getId().equals(sessao.microareaId())) {
             throw new AcessoNegadoException("O ACS só pode acessar receitas da própria microárea");
+        }
+        if (sessao.usuario().getPerfil() == Perfil.MEDICO) {
+            acessoMedico.verificar(sessao, dossie.getPaciente().getId());
         }
         return receitaRepository.findByDossieIdOrderByAssinadaEmDesc(dossieId).stream()
                 .map(this::resumir)

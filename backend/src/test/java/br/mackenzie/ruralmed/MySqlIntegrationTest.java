@@ -145,6 +145,34 @@ class MySqlIntegrationTest {
     }
 
     @Test
+    void medicoSoVeHistoricoDePacienteDaPropriaFilaOuLocalizadoPorDocumento() throws Exception {
+        String dermato = login("dermato@ruralmed.dev");
+        Long especialidade = auth.exigir(dermato).especialidadeId();
+        var paciente = pacientes.findAll().stream()
+                .filter(p -> p.getCpf() != null)
+                .filter(p -> !dossies.existsByPacienteIdAndEspecialidadeId(p.getId(), especialidade))
+                .findFirst().orElseThrow();
+
+        http.perform(get("/api/pacientes/" + paciente.getId() + "/historico").header("Authorization", dermato))
+                .andExpect(status().isForbidden());
+        http.perform(get("/api/pacientes/localizar").param("identificador", paciente.getCpf())
+                        .header("Authorization", dermato))
+                .andExpect(status().isOk());
+        http.perform(get("/api/pacientes/" + paciente.getId() + "/historico").header("Authorization", dermato))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void ubsNaoCriaGestor() throws Exception {
+        http.perform(post("/api/usuarios").header("Authorization", login("ubs@ruralmed.dev"))
+                        .contentType("application/json")
+                        .content("{\"nome\":\"Novo Gestor\",\"email\":\"novo.gestor@ruralmed.dev\",\"cpf\":\"39053344705\","
+                                + "\"senha\":\"segredo123\",\"perfil\":\"GESTOR\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("O perfil Gestor é cadastrado pela administração do sistema"));
+    }
+
+    @Test
     void deveResponderErrosComMensagemClaraECabecalhosDeSeguranca() throws Exception {
         String gestor = login("gestor@ruralmed.dev");
         http.perform(get("/api/relatorios/repasses?ano=2026&mes=13").header("Authorization", gestor))

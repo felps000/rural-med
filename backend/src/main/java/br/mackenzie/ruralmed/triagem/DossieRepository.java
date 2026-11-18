@@ -20,5 +20,7 @@ public interface DossieRepository extends JpaRepository<Dossie, Long> {
 
     List<Dossie> findByPacienteIdOrderByColetadoEmAsc(Long pacienteId);
 
+    boolean existsByPacienteIdAndEspecialidadeId(Long pacienteId, Long especialidadeId);
+
     List<Dossie> findByColetadoEmBetween(OffsetDateTime inicio, OffsetDateTime fim);
 }

@@ -4,6 +4,7 @@ import br.mackenzie.ruralmed.auth.AuthService;
 import br.mackenzie.ruralmed.cadastro.Microarea;
 import br.mackenzie.ruralmed.cadastro.MicroareaRepository;
 import br.mackenzie.ruralmed.comum.RegraNegocioException;
+import br.mackenzie.ruralmed.triagem.DossieRepository;
 import br.mackenzie.ruralmed.usuario.Perfil;
 import br.mackenzie.ruralmed.usuario.Usuario;
 
@@ -22,7 +23,8 @@ import static org.mockito.Mockito.*;
 class PacienteServiceTest {
     private final PacienteRepository pacientes = mock(PacienteRepository.class);
     private final MicroareaRepository areas = mock(MicroareaRepository.class);
-    private final PacienteService service = new PacienteService(pacientes, areas);
+    private final AcessoMedico acessoMedico = new AcessoMedico(mock(DossieRepository.class));
+    private final PacienteService service = new PacienteService(pacientes, areas, acessoMedico);
 
     private AuthService.Sessao sessao(Perfil perfil) {
         Usuario usuario = new Usuario();
@@ -158,7 +160,7 @@ class PacienteServiceTest {
             existente.setIdentificadorUnico("f47ac10b-58cc-4372-a567-0e02b2c3d479");
             when(pacientes.findByCpf("52998224725")).thenReturn(Optional.of(existente));
 
-            PacienteService.PacienteResumo resumo = service.localizarParaMedico("529.982.247-25");
+            PacienteService.PacienteResumo resumo = service.localizarParaMedico("529.982.247-25", sessao(Perfil.MEDICO));
 
             assertThat(resumo.id()).isEqualTo(42L);
             assertThat(resumo.nome()).isEqualTo("Paciente de teste");
@@ -173,7 +175,7 @@ class PacienteServiceTest {
             existente.setIdentificadorUnico(id);
             when(pacientes.findByIdentificadorUnico(id)).thenReturn(Optional.of(existente));
 
-            PacienteService.PacienteResumo resumo = service.localizarParaMedico("RM-F47AC10B58CC4372A5670E02B2C3D479");
+            PacienteService.PacienteResumo resumo = service.localizarParaMedico("RM-F47AC10B58CC4372A5670E02B2C3D479", sessao(Perfil.MEDICO));
 
             assertThat(resumo.identificadorUnico()).isEqualTo(id);
             verify(pacientes).findByIdentificadorUnico(id);
@@ -192,7 +194,7 @@ class PacienteServiceTest {
 
         @Test
         void deveRecusarIdIncompletoNaBusca() {
-            assertThatThrownBy(() -> service.localizarParaMedico("RM-123"))
+            assertThatThrownBy(() -> service.localizarParaMedico("RM-123", sessao(Perfil.MEDICO)))
                     .isInstanceOf(RegraNegocioException.class)
                     .hasMessage("Use o CPF completo ou o ID RuralMed completo");
         }

@@ -2,6 +2,7 @@ package br.mackenzie.ruralmed.exame;
 
 import br.mackenzie.ruralmed.auth.AuthService;
 import br.mackenzie.ruralmed.comum.RegraNegocioException;
+import br.mackenzie.ruralmed.paciente.AcessoMedico;
 import br.mackenzie.ruralmed.triagem.Dossie;
 import br.mackenzie.ruralmed.triagem.DossieRepository;
 import br.mackenzie.ruralmed.usuario.Perfil;
@@ -19,7 +20,7 @@ import static org.mockito.Mockito.*;
 class AnexoExameServiceTest {
     private final AnexoExameRepository anexos = mock(AnexoExameRepository.class);
     private final DossieRepository dossies = mock(DossieRepository.class);
-    private final AnexoExameService service = new AnexoExameService(anexos, dossies);
+    private final AnexoExameService service = new AnexoExameService(anexos, dossies, new AcessoMedico(dossies));
     private final AuthService.Sessao sessao = new AuthService.Sessao("token", usuarioUbs(), null, null);
     private final Dossie dossie = new Dossie();
 
