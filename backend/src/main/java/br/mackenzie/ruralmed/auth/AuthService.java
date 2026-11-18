@@ -15,23 +15,24 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
- * Sessoes em memoria: reiniciar o servidor invalida os tokens.
- * Cada sessao expira em {@link #VALIDADE_SESSAO} e e encerrada quando o usuario e inativado.
+ * Login com token JWT assinado: o servidor não guarda sessões, então reiniciar não desloga ninguém.
+ * <ul>
+ *   <li>O token vale {@link #VALIDADE_SESSAO};</li>
+ *   <li>a cada requisição o usuário é conferido no banco: inativado ou com perfil trocado, perde o acesso na hora;</li>
+ *   <li>"Sair" invalida o token (lista em memória até ele expirar);</li>
+ *   <li>depois de {@link #MAXIMO_FALHAS} senhas erradas seguidas, o login fica bloqueado por {@link #BLOQUEIO}.</li>
+ * </ul>
  */
 @Service
 public class AuthService {
 
     public record Sessao(String token, Usuario usuario, Long microareaId, Long especialidadeId) {
-    }
-
-    private record SessaoAtiva(Sessao sessao, Instant expiraEm) {
     }
 
     private record Tentativas(int falhas, Instant bloqueadoAte) {
@@ -40,28 +41,32 @@ public class AuthService {
     static final Duration VALIDADE_SESSAO = Duration.ofHours(8);
     static final int MAXIMO_FALHAS = 5;
     static final Duration BLOQUEIO = Duration.ofMinutes(15);
+    private static final String FACA_LOGIN = "Faça login para continuar";
 
-    private final Map<String, SessaoAtiva> sessoes = new ConcurrentHashMap<>();
+    /** Tokens encerrados com "Sair", guardados só até a data em que expirariam. */
+    private final Map<String, Instant> encerrados = new ConcurrentHashMap<>();
     private final Map<String, Tentativas> tentativas = new ConcurrentHashMap<>();
-    private final Clock relogio;
     private final BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 
     private final UsuarioRepository usuarioRepository;
     private final AcsRepository acsRepository;
     private final MedicoRepository medicoRepository;
+    private final TokenJwt tokenJwt;
+    private final Clock relogio;
 
     @Autowired
     public AuthService(UsuarioRepository usuarioRepository, AcsRepository acsRepository,
-                       MedicoRepository medicoRepository) {
-        this(usuarioRepository, acsRepository, medicoRepository, Clock.systemUTC());
+                       MedicoRepository medicoRepository, TokenJwt tokenJwt) {
+        this(usuarioRepository, acsRepository, medicoRepository, tokenJwt, Clock.systemUTC());
     }
 
     AuthService(UsuarioRepository usuarioRepository, AcsRepository acsRepository,
-                MedicoRepository medicoRepository, Clock relogio) {
-        this.relogio = relogio;
+                MedicoRepository medicoRepository, TokenJwt tokenJwt, Clock relogio) {
         this.usuarioRepository = usuarioRepository;
         this.acsRepository = acsRepository;
         this.medicoRepository = medicoRepository;
+        this.tokenJwt = tokenJwt;
+        this.relogio = relogio;
     }
 
     public Sessao login(String login, String senha) {
@@ -95,41 +100,45 @@ public class AuthService {
             especialidadeId = medico.getEspecialidade().getId();
         }
 
-        String token = UUID.randomUUID().toString();
-        Sessao sessao = new Sessao(token, usuario, microareaId, especialidadeId);
-        removerExpiradas();
-        sessoes.put(token, new SessaoAtiva(sessao, relogio.instant().plus(VALIDADE_SESSAO)));
-        return sessao;
+        Instant agora = relogio.instant();
+        String token = tokenJwt.emitir(usuario.getId(), microareaId, especialidadeId, agora, agora.plus(VALIDADE_SESSAO));
+        return new Sessao(token, usuario, microareaId, especialidadeId);
     }
 
     public void sair(String token) {
-        if (token != null) sessoes.remove(token);
+        TokenJwt.Conteudo conteudo = tokenJwt.ler(semPrefixo(token));
+        if (conteudo == null) return;
+        Instant agora = relogio.instant();
+        encerrados.values().removeIf(expira -> !agora.isBefore(expira));
+        encerrados.put(conteudo.id(), conteudo.expiraEm());
     }
 
-    /** Chamado ao inativar um usuario: os tokens que ele ja tinha deixam de valer na hora. */
-    public void encerrarSessoesDoUsuario(Long usuarioId) {
-        sessoes.values().removeIf(ativa -> usuarioId.equals(ativa.sessao().usuario().getId()));
-    }
-
-    /** Sem perfis informados, exige apenas uma sessao valida. */
+    /** Sem perfis informados, exige apenas um login válido. */
     public Sessao exigir(String token, Perfil... perfisPermitidos) {
-        SessaoAtiva ativa = token == null ? null : sessoes.get(token);
-        if (ativa != null && !relogio.instant().isBefore(ativa.expiraEm())) {
-            sessoes.remove(token);
-            ativa = null;
+        String limpo = semPrefixo(token);
+        TokenJwt.Conteudo conteudo = tokenJwt.ler(limpo);
+        if (conteudo == null || !relogio.instant().isBefore(conteudo.expiraEm())
+                || encerrados.containsKey(conteudo.id())) {
+            throw new AcessoNegadoException(FACA_LOGIN);
         }
-        if (ativa == null) {
-            throw new AcessoNegadoException("Faça login para continuar");
-        }
-        Sessao sessao = ativa.sessao();
-        if (perfisPermitidos.length > 0 && !Arrays.asList(perfisPermitidos).contains(sessao.usuario().getPerfil())) {
+        Usuario usuario = usuarioRepository.findById(conteudo.usuarioId())
+                .filter(Usuario::getAtivo)
+                .orElseThrow(() -> new AcessoNegadoException(FACA_LOGIN));
+        if (perfisPermitidos.length > 0 && !Arrays.asList(perfisPermitidos).contains(usuario.getPerfil())) {
             throw new AcessoNegadoException("Seu perfil não tem acesso a esta funcionalidade");
         }
-        return sessao;
+        return new Sessao(limpo, usuario, conteudo.microareaId(), conteudo.especialidadeId());
     }
 
     public String gerarHash(String senha) {
         return bcrypt.encode(senha);
+    }
+
+    /** Aceita o token puro ou no formato "Bearer <token>". */
+    private static String semPrefixo(String token) {
+        if (token == null) return null;
+        String limpo = token.trim();
+        return limpo.regionMatches(true, 0, "Bearer ", 0, 7) ? limpo.substring(7).trim() : limpo;
     }
 
     private void verificarBloqueio(String chave) {
@@ -148,10 +157,5 @@ public class AuthService {
             int falhas = (atual == null ? 0 : atual.falhas()) + 1;
             return new Tentativas(falhas, falhas >= MAXIMO_FALHAS ? relogio.instant().plus(BLOQUEIO) : null);
         });
-    }
-
-    private void removerExpiradas() {
-        Instant agora = relogio.instant();
-        sessoes.values().removeIf(ativa -> !agora.isBefore(ativa.expiraEm()));
     }
 }

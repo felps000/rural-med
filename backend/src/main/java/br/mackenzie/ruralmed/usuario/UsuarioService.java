@@ -133,8 +133,7 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
         usuario.setAtivo(false);
-        usuarioRepository.save(usuario);
-        authService.encerrarSessoesDoUsuario(id);
+        usuarioRepository.save(usuario); // a cada requisição o login confere se o usuário segue ativo
     }
 
     public List<Medico> medicosDisponiveis(Long especialidadeId) {

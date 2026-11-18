@@ -36,7 +36,8 @@ class AuthServiceTest {
     private final AcsRepository agentes = mock(AcsRepository.class);
     private final MedicoRepository medicos = mock(MedicoRepository.class);
     private final RelogioDeTeste relogio = new RelogioDeTeste();
-    private final AuthService auth = new AuthService(usuarios, agentes, medicos, relogio);
+    static final String SEGREDO = "segredo-de-teste-com-pelo-menos-32-caracteres";
+    private final AuthService auth = new AuthService(usuarios, agentes, medicos, new TokenJwt(SEGREDO), relogio);
     private Usuario usuario;
 
     @BeforeEach
@@ -45,6 +46,7 @@ class AuthServiceTest {
         usuario.setId(1L);
         usuario.setPerfil(Perfil.UBS);
         usuario.setSenhaHash("$2a$10$RqVvcwxpr5Jn1yMMamWojOi/5bHfMpIBixX8H/sKl9zcbOcO1Twua");
+        when(usuarios.findById(1L)).thenReturn(Optional.of(usuario));
     }
 
     @Nested
@@ -57,7 +59,8 @@ class AuthServiceTest {
             var sessao = auth.login(" UBS@RURALMED.DEV ", "ruralmed123");
 
             assertThat(sessao.token()).isNotBlank();
-            assertThat(auth.exigir(sessao.token(), Perfil.UBS)).isSameAs(sessao);
+            assertThat(auth.exigir(sessao.token(), Perfil.UBS).usuario()).isSameAs(usuario);
+            assertThat(auth.exigir("Bearer " + sessao.token()).usuario()).isSameAs(usuario);
             assertThat(sessao.usuario()).isSameAs(usuario);
         }
 
@@ -209,7 +212,7 @@ class AuthServiceTest {
         void deveExpirarSessaoDepoisDaValidade() {
             var sessao = auth.login("ubs@ruralmed.dev", "ruralmed123");
             relogio.avancar(AuthService.VALIDADE_SESSAO.minusSeconds(1));
-            assertThat(auth.exigir(sessao.token())).isSameAs(sessao);
+            assertThat(auth.exigir(sessao.token()).usuario()).isSameAs(usuario);
 
             relogio.avancar(Duration.ofSeconds(1));
 
@@ -218,13 +221,46 @@ class AuthServiceTest {
         }
 
         @Test
-        void deveEncerrarSessoesQuandoUsuarioEInativado() {
+        void deveRecusarTokenDeUsuarioInativadoDepoisDoLogin() {
             var sessao = auth.login("ubs@ruralmed.dev", "ruralmed123");
 
-            auth.encerrarSessoesDoUsuario(1L);
+            usuario.setAtivo(false);
 
             assertThatThrownBy(() -> auth.exigir(sessao.token()))
-                    .isInstanceOf(AcessoNegadoException.class);
+                    .isInstanceOf(AcessoNegadoException.class).hasMessage("Faça login para continuar");
+        }
+
+        @Test
+        void loginSobreviveAReinicioDoServidorComOMesmoSegredo() {
+            var sessao = auth.login("ubs@ruralmed.dev", "ruralmed123");
+            var servidorReiniciado = new AuthService(usuarios, agentes, medicos, new TokenJwt(SEGREDO), relogio);
+
+            assertThat(servidorReiniciado.exigir(sessao.token()).usuario()).isSameAs(usuario);
+        }
+
+        @Test
+        void deveRecusarTokenAdulteradoOuDeOutroSegredo() {
+            var sessao = auth.login("ubs@ruralmed.dev", "ruralmed123");
+            String[] partes = sessao.token().split("\\.");
+            String adulterado = partes[0] + "." + partes[1] + "x." + partes[2];
+            var outroServidor = new AuthService(usuarios, agentes, medicos,
+                    new TokenJwt("outro-segredo-com-pelo-menos-32-caracteres!!"), relogio);
+
+            assertThatThrownBy(() -> auth.exigir(adulterado)).isInstanceOf(AcessoNegadoException.class);
+            assertThatThrownBy(() -> outroServidor.exigir(sessao.token())).isInstanceOf(AcessoNegadoException.class);
+        }
+
+        @Test
+        void deveCarregarMicroareaEEspecialidadeDoToken() {
+            usuario.setPerfil(Perfil.ACS);
+            Microarea area = new Microarea();
+            area.setId(12L);
+            Acs acs = new Acs();
+            acs.setMicroarea(area);
+            when(agentes.findById(1L)).thenReturn(Optional.of(acs));
+            var sessao = auth.login("ubs@ruralmed.dev", "ruralmed123");
+
+            assertThat(auth.exigir(sessao.token(), Perfil.ACS).microareaId()).isEqualTo(12L);
         }
 
         @Test

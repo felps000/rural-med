@@ -1,6 +1,7 @@
 package br.mackenzie.ruralmed.usuario;
 
 import br.mackenzie.ruralmed.auth.AuthService;
+import br.mackenzie.ruralmed.auth.TokenJwt;
 import br.mackenzie.ruralmed.cadastro.ClinicaParceiraRepository;
 import br.mackenzie.ruralmed.cadastro.Especialidade;
 import br.mackenzie.ruralmed.cadastro.EspecialidadeRepository;
@@ -32,7 +33,8 @@ class UsuarioServiceTest {
     private final MicroareaRepository areas = mock(MicroareaRepository.class);
     private final EspecialidadeRepository especialidades = mock(EspecialidadeRepository.class);
     private final ClinicaParceiraRepository clinicas = mock(ClinicaParceiraRepository.class);
-    private final AuthService auth = new AuthService(usuarios, agentes, medicos);
+    private final AuthService auth = new AuthService(usuarios, agentes, medicos,
+            new TokenJwt("segredo-de-teste-com-pelo-menos-32-caracteres"));
     private final UsuarioService service = new UsuarioService(usuarios, agentes, medicos,
             areas, especialidades, clinicas, auth);
 
