@@ -24,7 +24,26 @@ Sistema de telessaúde para triagem em áreas rurais, desenvolvido para a discip
 
 ## Tecnologias
 
-Java, Spring Boot, Spring Data JPA, MySQL, Flyway, HTML, CSS e JavaScript.
+- **Backend** (`backend/`): Java 21, Spring Boot, Spring Data JPA, MySQL e Flyway.
+- **Frontend** (`frontend/`): React, TypeScript, Vite, Tailwind CSS e GSAP.
+
+## Como rodar
+
+Pré-requisitos: Java 21, Node 20 ou mais novo e um MySQL 8.
+
+```bash
+docker compose up -d                 # sobe o MySQL (defina DB_PASSWORD antes)
+cd frontend && npm install && npm run build   # compila o front para dentro do backend
+cd ../backend && mvn spring-boot:run          # abre em http://localhost:8080
+```
+
+O MySQL do `docker compose` fica na porta 3307. Antes do `mvn spring-boot:run`, aponte o backend para ele:
+
+```bash
+export DB_URL='jdbc:mysql://localhost:3307/ruralmed?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true'
+```
+
+Para desenvolver o front com recarga automática, rode o backend e, em outro terminal, `cd frontend && npm run dev` (abre em http://localhost:5173 e repassa as chamadas `/api` para o backend).
 
 ## Testes
 

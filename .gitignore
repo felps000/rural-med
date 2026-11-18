@@ -5,3 +5,6 @@ uploads/
 *.iml
 .vscode/
 .DS_Store
+
+# Front compilado (gerado por: cd frontend && npm run build)
+backend/src/main/resources/static/

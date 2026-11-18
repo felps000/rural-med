@@ -84,3 +84,33 @@
     to { opacity: 1; }
   }
 }
+
+/* Alto contraste: escolhido pelo usuário no menu do perfil. */
+:root[data-contraste="alto"] {
+  --color-osso: #ffffff;
+  --color-superficie: #ffffff;
+  --color-tinta: #000000;
+  --color-tinta-suave: #1d1d1d;
+  --color-floresta: #003d26;
+  --color-linha: #5c5c5c;
+  --color-ambar: #6b3d00;
+}
+:root[data-contraste="alto"] :focus-visible {
+  outline-width: 3px;
+}
+
+/* Impressão do laudo: só o documento aparece no papel. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .documento-laudo,
+  .documento-laudo * {
+    visibility: visible;
+  }
+  .documento-laudo {
+    position: fixed;
+    inset: 0;
+    box-shadow: none;
+  }
+}
