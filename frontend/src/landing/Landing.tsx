@@ -89,7 +89,7 @@ function Abertura() {
     <section ref={raiz} className="relative h-svh motion-safe:h-[230vh]" aria-labelledby="titulo-abertura">
       <div className="sticky top-0 h-svh overflow-hidden bg-[#e9d6b8]">
         <div data-camada="fundo" className="absolute inset-0 origin-[60%_70%] will-change-transform">
-          <Foto nome="hero-paisagem" alt="Casa isolada no sertão ao fim da tarde, no fim de uma estrada de terra" posicao="62% 60%" prioridade />
+          <Foto nome="hero-paisagem" alt="Casa isolada no sertão ao fim da tarde, no fim de uma estrada de terra" posicao="72% 60%" prioridade />
         </div>
 
         <div data-titulo className="absolute inset-x-0 top-[15svh] px-6 text-center">
@@ -174,12 +174,14 @@ function Estrada() {
 
   return (
     <section ref={raiz} className="relative motion-safe:h-[500vh]" aria-labelledby="titulo-virada">
-      <div data-palco className="relative h-svh overflow-hidden bg-tinta motion-safe:sticky motion-safe:top-0">
+      <div data-palco className="grao relative h-svh overflow-hidden bg-floresta-escura motion-safe:sticky motion-safe:top-0">
         {/* Fundo do ato 3: a agente de saúde na varanda. */}
-        <div data-agente className="absolute inset-0 will-change-transform">
-          <Foto nome="agente" alt="Agente comunitária de saúde mede a pressão de um senhor na varanda de casa" posicao="30% 40%" />
+        {/* No computador, a foto ocupa a esquerda e o celular fica à direita, sem cobrir ninguém. */}
+        <div data-agente className="absolute inset-0 overflow-hidden will-change-transform md:right-[38%]">
+          <Foto nome="agente" alt="Agente comunitária de saúde mede a pressão de um senhor na varanda de casa" posicao="40% 38%" />
         </div>
-        <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#0f1a14]/85 via-[#0f1a14]/45 to-transparent sm:w-[65%]" />
+        <div className="absolute inset-x-0 top-0 h-[42%] bg-gradient-to-b from-[#0f1a14]/85 to-transparent md:hidden" />
+        <div className="absolute bottom-0 left-0 hidden h-[55%] w-[62%] bg-gradient-to-t from-[#0f1a14]/90 to-transparent md:block" />
 
         {/* Ato 2: a estrada, que depois encolhe. Some por completo no modo sem animação. */}
         <div
@@ -206,7 +208,7 @@ function Estrada() {
         {/* O celular: a estrada encolhe exatamente até este retângulo. */}
         <div
           data-alvo-celular
-          className="absolute right-1/2 bottom-[7svh] h-[min(54svh,600px)] w-[min(26svh,290px)] sm:h-[min(62svh,600px)] sm:w-[min(30svh,290px)] translate-x-1/2 sm:top-1/2 sm:right-[10vw] sm:bottom-auto sm:-translate-y-1/2 sm:translate-x-0"
+          className="absolute bottom-[7svh] left-1/2 h-[min(54svh,600px)] w-[min(26svh,290px)] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[81%] md:h-[min(62svh,600px)] md:w-[min(30svh,290px)] md:-translate-y-1/2"
         >
           <div
             data-moldura
@@ -217,7 +219,7 @@ function Estrada() {
           </div>
         </div>
 
-        <div data-virada className="absolute top-[14svh] left-6 w-[min(88vw,36rem)] text-osso opacity-0 motion-reduce:opacity-100 sm:top-auto sm:bottom-[16svh] sm:left-14">
+        <div data-virada className="absolute top-[14svh] left-6 w-[min(88vw,36rem)] text-osso opacity-0 motion-reduce:opacity-100 md:top-auto md:bottom-[12svh] md:left-14">
           <h2 id="titulo-virada" className="max-w-[12ch] text-[clamp(2.2rem,5.4vw,4.6rem)] leading-[1] font-semibold">
             Agora, a consulta começa na varanda.
           </h2>
