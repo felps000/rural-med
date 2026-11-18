@@ -1,5 +1,8 @@
 # RuralMed
 
+**Demonstração online:** https://ruralmed-lq1n.onrender.com
+(dados fictícios, restaurados todo dia; a primeira visita pode levar até 1 minuto para o servidor acordar)
+
 Sistema de telessaúde para triagem em áreas rurais, desenvolvido para a disciplina de Desenvolvimento de Sistemas I da Universidade Presbiteriana Mackenzie.
 
 ## Funcionalidades
