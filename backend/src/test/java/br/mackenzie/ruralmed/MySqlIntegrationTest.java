@@ -273,7 +273,9 @@ class MySqlIntegrationTest {
 
     @Test
     void carregaMigracoesEDadosDeDemonstracao() throws Exception {
-        assertEquals(3, jdbc.queryForObject(
+        int migracoes = new org.springframework.core.io.support.PathMatchingResourcePatternResolver()
+                .getResources("classpath:db/migration/V*.sql").length;
+        assertEquals(migracoes, jdbc.queryForObject(
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1", Integer.class));
         assertEquals(5, pacientes.count());
         assertEquals(3, dossies.count());
@@ -293,7 +295,7 @@ class MySqlIntegrationTest {
         UUID idLocal = UUID.randomUUID();
         OffsetDateTime coleta = OffsetDateTime.parse("2026-11-03T08:30:00.123456-03:00");
         var dados = new DadosTriagem("Dor no peito", 37.1, 182, 110, 118, 93, 8,
-                List.of("hipertensao"));
+                List.of("hipertensão"));
         var recebida = new TriagemService.TriagemRecebida(idLocal, paciente.getId(), coleta,
                 dados, "Falta de ar");
 
