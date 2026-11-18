@@ -163,6 +163,22 @@ class MySqlIntegrationTest {
     }
 
     @Test
+    void casosNaoExpoemDadosPessoaisNemRemuneracaoDeProfissionais() throws Exception {
+        for (String conta : new String[] {"ubs@ruralmed.dev", "acs@ruralmed.dev"}) {
+            http.perform(get("/api/dossies").header("Authorization", login(conta)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].acs.usuario.nome").exists())
+                    .andExpect(jsonPath("$..usuario.cpf").isEmpty())
+                    .andExpect(jsonPath("$..usuario.email").isEmpty())
+                    .andExpect(jsonPath("$..valorPorLaudo").isEmpty());
+        }
+        http.perform(get("/api/medicos").param("especialidadeId", "1").header("Authorization", login("ubs@ruralmed.dev")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$..valorPorLaudo").isEmpty())
+                .andExpect(jsonPath("$..usuario.cpf").isEmpty());
+    }
+
+    @Test
     void ubsNaoCriaGestor() throws Exception {
         http.perform(post("/api/usuarios").header("Authorization", login("ubs@ruralmed.dev"))
                         .contentType("application/json")

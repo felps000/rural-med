@@ -3,6 +3,8 @@ package br.mackenzie.ruralmed.usuario;
 import br.mackenzie.ruralmed.cadastro.ClinicaParceira;
 import br.mackenzie.ruralmed.cadastro.Especialidade;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -15,6 +17,7 @@ public class Medico {
 
     @OneToOne
     @MapsId
+    @JsonIgnoreProperties({"cpf", "email", "criadoEm"}) // dados pessoais de outros profissionais não saem junto com o caso
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
@@ -32,6 +35,7 @@ public class Medico {
 
     private Boolean crmAtivo = false;
 
+    @JsonIgnore // só o Gestor vê, pelo extrato de repasses
     private BigDecimal valorPorLaudo = BigDecimal.ZERO;
 
     public Long getUsuarioId() { return usuarioId; }

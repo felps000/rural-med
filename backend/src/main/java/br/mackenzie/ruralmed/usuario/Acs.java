@@ -2,6 +2,7 @@ package br.mackenzie.ruralmed.usuario;
 
 import br.mackenzie.ruralmed.cadastro.Microarea;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
@@ -13,6 +14,7 @@ public class Acs {
 
     @OneToOne
     @MapsId
+    @JsonIgnoreProperties({"cpf", "email", "criadoEm"}) // dados pessoais de outros profissionais não saem junto com o caso
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
