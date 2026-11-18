@@ -145,6 +145,22 @@ class MySqlIntegrationTest {
     }
 
     @Test
+    void deveResponderErrosComMensagemClaraECabecalhosDeSeguranca() throws Exception {
+        String gestor = login("gestor@ruralmed.dev");
+        http.perform(get("/api/relatorios/repasses?ano=2026&mes=13").header("Authorization", gestor))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("Informe um mês entre 1 e 12"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"));
+        http.perform(get("/api/relatorios/repasses?ano=2026&mes=abc").header("Authorization", gestor))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("Valor inválido para mes"));
+        http.perform(post("/api/login").contentType("application/json").content("{quebrado"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("Os dados enviados estão em um formato inválido"));
+    }
+
+    @Test
     void deveRecusarSenhaIncorretaSemCriarSessao() throws Exception {
         http.perform(post("/api/login").contentType("application/json")
                         .content("{\"login\":\"acs@ruralmed.dev\",\"senha\":\"incorreta\"}"))

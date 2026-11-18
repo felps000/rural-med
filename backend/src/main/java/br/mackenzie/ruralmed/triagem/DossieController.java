@@ -43,7 +43,7 @@ public class DossieController {
     public Dossie encaminhar(@PathVariable Long id, @RequestBody EncaminharForm form,
                              @RequestHeader(value = "Authorization", required = false) String token) {
         authService.exigir(token, Perfil.UBS);
-        return triagemService.encaminhar(id, form.especialidadeId());
+        return triagemService.encaminhar(id, form == null ? null : form.especialidadeId());
     }
 
     @GetMapping("/fila")

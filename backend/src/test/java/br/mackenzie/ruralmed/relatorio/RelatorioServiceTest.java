@@ -4,6 +4,7 @@ import br.mackenzie.ruralmed.cadastro.Especialidade;
 import br.mackenzie.ruralmed.cadastro.Microarea;
 import br.mackenzie.ruralmed.cadastro.Municipio;
 import br.mackenzie.ruralmed.cadastro.Ubs;
+import br.mackenzie.ruralmed.comum.RegraNegocioException;
 import br.mackenzie.ruralmed.laudo.Laudo;
 import br.mackenzie.ruralmed.laudo.LaudoRepository;
 import br.mackenzie.ruralmed.laudo.StatusLaudo;
@@ -92,6 +93,18 @@ class RelatorioServiceTest {
             var resultado = service.atendimentos(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
 
             assertThat(resultado).isEqualTo(new RelatorioService.Relatorio(0, 0, 0, 0, BigDecimal.ZERO));
+        }
+
+        @Test
+        void deveRecusarPeriodosEMesesInvalidos() {
+            assertThatThrownBy(() -> service.atendimentos(LocalDate.of(2026, 12, 1), LocalDate.of(2026, 11, 1)))
+                    .isInstanceOf(RegraNegocioException.class)
+                    .hasMessage("A data inicial deve ser anterior à final");
+            assertThatThrownBy(() -> service.atendimentos(LocalDate.of(2020, 1, 1), LocalDate.of(2026, 1, 1)))
+                    .isInstanceOf(RegraNegocioException.class);
+            assertThatThrownBy(() -> service.repasses(2026, 13))
+                    .isInstanceOf(RegraNegocioException.class)
+                    .hasMessage("Informe um mês entre 1 e 12");
         }
 
         @Test

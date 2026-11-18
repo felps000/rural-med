@@ -101,6 +101,15 @@ class TriagemServiceTest {
         }
 
         @Test
+        void deveRejeitarTriagemSemPacienteSemDerrubarOLote() {
+            var resultados = service.sincronizar(List.of(recebida(null, dadosLeves())), sessao);
+
+            assertThat(resultados.get(0).situacao()).isEqualTo("REJEITADO");
+            assertThat(resultados.get(0).mensagem()).isEqualTo("Informe o paciente da triagem");
+            verify(dossies, never()).save(any());
+        }
+
+        @Test
         void deveContinuarLoteAposPacienteInexistente() {
             when(pacientes.findById(10L)).thenReturn(Optional.empty());
             when(pacientes.findById(11L)).thenReturn(Optional.of(paciente));
@@ -155,6 +164,13 @@ class TriagemServiceTest {
     @Nested
     @DisplayName("Encaminhamento e filas")
     class Encaminhamento {
+        @Test
+        void deveExigirEspecialidadeNoEncaminhamento() {
+            assertThatThrownBy(() -> service.encaminhar(20L, null))
+                    .isInstanceOf(RegraNegocioException.class)
+                    .hasMessage("Escolha a especialidade do encaminhamento");
+        }
+
         private Dossie prepararDossie() {
             Dossie dossie = new Dossie();
             Especialidade especialidade = new Especialidade();

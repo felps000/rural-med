@@ -96,6 +96,7 @@ public class TriagemService {
             return new Resultado(t.idLocal(), "JA_EXISTIA", "Triagem já recebida antes");
         }
 
+        if (t.pacienteId() == null) throw new RegraNegocioException("Informe o paciente da triagem");
         Paciente paciente = pacienteRepository.findById(t.pacienteId())
                 .orElseThrow(() -> new RegraNegocioException("Paciente não encontrado"));
 
@@ -146,6 +147,7 @@ public class TriagemService {
 
     /** RF02: a UBS escolhe a especialidade. Sem médico disponível, o caso fica aguardando. */
     public Dossie encaminhar(Long dossieId, Long especialidadeId) {
+        if (especialidadeId == null) throw new RegraNegocioException("Escolha a especialidade do encaminhamento");
         Dossie dossie = dossieRepository.findById(dossieId)
                 .orElseThrow(() -> new RegraNegocioException("Dossiê não encontrado"));
         if (dossie.getStatus() == StatusDossie.LAUDO_EMITIDO) {

@@ -1,5 +1,6 @@
 package br.mackenzie.ruralmed.relatorio;
 
+import br.mackenzie.ruralmed.comum.RegraNegocioException;
 import br.mackenzie.ruralmed.laudo.Laudo;
 import br.mackenzie.ruralmed.laudo.LaudoRepository;
 import br.mackenzie.ruralmed.laudo.StatusLaudo;
@@ -43,6 +44,11 @@ public class RelatorioService {
      * A economia usa o custo médio de viagem do município do paciente.
      */
     public Relatorio atendimentos(LocalDate inicio, LocalDate fim) {
+        if (inicio == null || fim == null) throw new RegraNegocioException("Informe o período do relatório");
+        if (inicio.isAfter(fim)) throw new RegraNegocioException("A data inicial deve ser anterior à final");
+        if (inicio.plusYears(1).isBefore(fim)) {
+            throw new RegraNegocioException("Escolha um período de até 1 ano");
+        }
         OffsetDateTime de = inicio.atStartOfDay(FUSO).toOffsetDateTime();
         OffsetDateTime ate = fim.plusDays(1).atStartOfDay(FUSO).toOffsetDateTime();
 
@@ -63,6 +69,8 @@ public class RelatorioService {
     }
 
     public List<LinhaExtrato> repasses(int ano, int mes) {
+        if (mes < 1 || mes > 12) throw new RegraNegocioException("Informe um mês entre 1 e 12");
+        if (ano < 2000 || ano > 2100) throw new RegraNegocioException("Informe um ano válido");
         OffsetDateTime de = LocalDate.of(ano, mes, 1).atStartOfDay(FUSO).toOffsetDateTime();
         OffsetDateTime ate = de.plusMonths(1);
 
