@@ -54,12 +54,16 @@ public class AnexoExameService {
             throw new RegraNegocioException("Formato não permitido. Envie PDF, JPG ou PNG");
         }
         try {
+            byte[] conteudo = arquivo.getBytes();
+            if (!conteudoConfereComTipo(conteudo, tipo.toLowerCase())) {
+                throw new RegraNegocioException("O conteúdo do arquivo não corresponde a um PDF, JPG ou PNG válido");
+            }
             AnexoExame anexo = new AnexoExame();
             anexo.setDossie(dossie);
             anexo.setNomeArquivo(nomeSeguro(arquivo.getOriginalFilename()));
             anexo.setTipoConteudo(tipo.toLowerCase());
             anexo.setTamanho(arquivo.getSize());
-            anexo.setConteudo(arquivo.getBytes());
+            anexo.setConteudo(conteudo);
             return anexoRepository.save(anexo);
         } catch (IOException e) {
             throw new RegraNegocioException("Não foi possível ler o arquivo enviado");
@@ -83,6 +87,27 @@ public class AnexoExameService {
             throw new AcessoNegadoException("O ACS só pode acessar exames da própria microárea");
         }
         return dossie;
+    }
+
+    /**
+     * O tipo informado pelo navegador pode ser falsificado; por isso conferimos a "assinatura"
+     * (primeiros bytes) do arquivo antes de guardar.
+     */
+    static boolean conteudoConfereComTipo(byte[] conteudo, String tipo) {
+        return switch (tipo) {
+            case "application/pdf" -> comecaCom(conteudo, '%', 'P', 'D', 'F');
+            case "image/jpeg" -> comecaCom(conteudo, 0xFF, 0xD8, 0xFF);
+            case "image/png" -> comecaCom(conteudo, 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A);
+            default -> false;
+        };
+    }
+
+    private static boolean comecaCom(byte[] conteudo, int... assinatura) {
+        if (conteudo == null || conteudo.length < assinatura.length) return false;
+        for (int i = 0; i < assinatura.length; i++) {
+            if ((conteudo[i] & 0xFF) != assinatura[i]) return false;
+        }
+        return true;
     }
 
     private String nomeSeguro(String nome) {

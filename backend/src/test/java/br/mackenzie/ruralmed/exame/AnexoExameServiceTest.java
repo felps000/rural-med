@@ -54,6 +54,28 @@ class AnexoExameServiceTest {
         verify(anexos, never()).save(any());
     }
 
+    @Test
+    void deveRecusarArquivoDisfarcadoDePdf() {
+        MockMultipartFile arquivo = new MockMultipartFile(
+                "arquivo", "exame.pdf", "application/pdf", "<script>alert(1)</script>".getBytes());
+
+        assertThatThrownBy(() -> service.salvar(3L, arquivo, sessao))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("não corresponde");
+        verify(anexos, never()).save(any());
+    }
+
+    @Test
+    void deveReconhecerAssinaturasDeImagem() {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0};
+        byte[] jpeg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+
+        assertThat(AnexoExameService.conteudoConfereComTipo(png, "image/png")).isTrue();
+        assertThat(AnexoExameService.conteudoConfereComTipo(jpeg, "image/jpeg")).isTrue();
+        assertThat(AnexoExameService.conteudoConfereComTipo(png, "image/jpeg")).isFalse();
+        assertThat(AnexoExameService.conteudoConfereComTipo(new byte[0], "application/pdf")).isFalse();
+    }
+
     private static Usuario usuarioUbs() {
         Usuario usuario = new Usuario();
         usuario.setId(8L);
