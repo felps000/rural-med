@@ -130,6 +130,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);
+        authService.encerrarSessoesDoUsuario(id);
     }
 
     public List<Medico> medicosDisponiveis(Long especialidadeId) {

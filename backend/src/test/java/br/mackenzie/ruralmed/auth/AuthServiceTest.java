@@ -12,6 +12,11 @@ import br.mackenzie.ruralmed.usuario.Perfil;
 import br.mackenzie.ruralmed.usuario.Usuario;
 import br.mackenzie.ruralmed.usuario.UsuarioRepository;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +35,8 @@ class AuthServiceTest {
     private final UsuarioRepository usuarios = mock(UsuarioRepository.class);
     private final AcsRepository agentes = mock(AcsRepository.class);
     private final MedicoRepository medicos = mock(MedicoRepository.class);
-    private final AuthService auth = new AuthService(usuarios, agentes, medicos);
+    private final RelogioDeTeste relogio = new RelogioDeTeste();
+    private final AuthService auth = new AuthService(usuarios, agentes, medicos, relogio);
     private Usuario usuario;
 
     @BeforeEach
@@ -189,5 +195,75 @@ class AuthServiceTest {
             assertThatThrownBy(() -> auth.exigir(sessao.token()))
                     .isInstanceOf(AcessoNegadoException.class).hasMessage("Faça login para continuar");
         }
+    }
+
+    @Nested
+    @DisplayName("Validade da sessao e protecao do login")
+    class Protecao {
+        @BeforeEach
+        void loginValido() {
+            when(usuarios.findByEmail("ubs@ruralmed.dev")).thenReturn(Optional.of(usuario));
+        }
+
+        @Test
+        void deveExpirarSessaoDepoisDaValidade() {
+            var sessao = auth.login("ubs@ruralmed.dev", "ruralmed123");
+            relogio.avancar(AuthService.VALIDADE_SESSAO.minusSeconds(1));
+            assertThat(auth.exigir(sessao.token())).isSameAs(sessao);
+
+            relogio.avancar(Duration.ofSeconds(1));
+
+            assertThatThrownBy(() -> auth.exigir(sessao.token()))
+                    .isInstanceOf(AcessoNegadoException.class).hasMessage("Faça login para continuar");
+        }
+
+        @Test
+        void deveEncerrarSessoesQuandoUsuarioEInativado() {
+            var sessao = auth.login("ubs@ruralmed.dev", "ruralmed123");
+
+            auth.encerrarSessoesDoUsuario(1L);
+
+            assertThatThrownBy(() -> auth.exigir(sessao.token()))
+                    .isInstanceOf(AcessoNegadoException.class);
+        }
+
+        @Test
+        void deveBloquearDepoisDeCincoSenhasErradasMesmoComSenhaCorreta() {
+            for (int i = 0; i < AuthService.MAXIMO_FALHAS; i++) {
+                assertThatThrownBy(() -> auth.login("ubs@ruralmed.dev", "errada"))
+                        .isInstanceOf(RegraNegocioException.class);
+            }
+
+            assertThatThrownBy(() -> auth.login("UBS@ruralmed.dev", "ruralmed123"))
+                    .isInstanceOf(MuitasTentativasException.class);
+
+            relogio.avancar(AuthService.BLOQUEIO);
+            assertThat(auth.login("ubs@ruralmed.dev", "ruralmed123").token()).isNotBlank();
+        }
+
+        @Test
+        void deveZerarContagemDepoisDeLoginCorreto() {
+            for (int i = 0; i < AuthService.MAXIMO_FALHAS - 1; i++) {
+                assertThatThrownBy(() -> auth.login("ubs@ruralmed.dev", "errada"))
+                        .isInstanceOf(RegraNegocioException.class);
+            }
+            auth.login("ubs@ruralmed.dev", "ruralmed123");
+
+            assertThatThrownBy(() -> auth.login("ubs@ruralmed.dev", "errada"))
+                    .isInstanceOf(RegraNegocioException.class);
+            assertThat(auth.login("ubs@ruralmed.dev", "ruralmed123").token()).isNotBlank();
+        }
+    }
+
+    static class RelogioDeTeste extends Clock {
+        private Instant agora = Instant.parse("2026-11-18T12:00:00Z");
+
+        void avancar(Duration tempo) {
+            agora = agora.plus(tempo);
+        }
+
+        @Override public Instant instant() { return agora; }
+        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+        @Override public Clock withZone(ZoneId zone) { return this; }
     }
 }

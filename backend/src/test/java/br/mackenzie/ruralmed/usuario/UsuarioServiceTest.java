@@ -6,6 +6,7 @@ import br.mackenzie.ruralmed.cadastro.Especialidade;
 import br.mackenzie.ruralmed.cadastro.EspecialidadeRepository;
 import br.mackenzie.ruralmed.cadastro.Microarea;
 import br.mackenzie.ruralmed.cadastro.MicroareaRepository;
+import br.mackenzie.ruralmed.comum.AcessoNegadoException;
 import br.mackenzie.ruralmed.comum.RegraNegocioException;
 
 import java.math.BigDecimal;
@@ -85,15 +86,23 @@ class UsuarioServiceTest {
         }
 
         @Test
-        void deveInativarUsuarioSemExcluirRegistro() {
+        void deveInativarUsuarioSemExcluirRegistroEEncerrarSuasSessoes() {
             Usuario usuario = new Usuario();
+            usuario.setId(1L);
+            usuario.setPerfil(Perfil.UBS);
+            usuario.setSenhaHash(auth.gerarHash("ruralmed123"));
             when(usuarios.findById(1L)).thenReturn(Optional.of(usuario));
+            when(usuarios.findByEmail("ubs@ruralmed.dev")).thenReturn(Optional.of(usuario));
+            String token = auth.login("ubs@ruralmed.dev", "ruralmed123").token();
 
             service.inativar(1L);
 
             assertThat(usuario.getAtivo()).isFalse();
             verify(usuarios).save(usuario);
             verify(usuarios, never()).deleteById(any());
+            assertThatThrownBy(() -> auth.exigir(token))
+                    .isInstanceOf(AcessoNegadoException.class)
+                    .hasMessage("Faça login para continuar");
         }
     }
 
