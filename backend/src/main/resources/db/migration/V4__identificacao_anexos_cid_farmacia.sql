@@ -3,10 +3,10 @@ ALTER TABLE paciente
 
 UPDATE paciente SET identificador_unico = UUID() WHERE identificador_unico IS NULL;
 
-ALTER TABLE paciente
-    MODIFY identificador_unico CHAR(36) NOT NULL,
-    ADD CONSTRAINT uq_paciente_identificador_unico UNIQUE (identificador_unico),
-    DROP CHECK ck_paciente_documento;
+-- Comandos separados: o TiDB (banco da demo online) não altera a mesma coluna duas vezes num só ALTER.
+ALTER TABLE paciente MODIFY identificador_unico CHAR(36) NOT NULL;
+ALTER TABLE paciente ADD CONSTRAINT uq_paciente_identificador_unico UNIQUE (identificador_unico);
+ALTER TABLE paciente DROP CHECK ck_paciente_documento;
 
 ALTER TABLE laudo
     MODIFY cid_codigo VARCHAR(10) NULL;

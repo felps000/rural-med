@@ -1,8 +1,11 @@
 package br.mackenzie.ruralmed.comum;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -11,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 /**
  * Só na demonstração pública: todo dia, às 4h (Brasília), apaga o banco e roda as migrations
  * de novo, restaurando os dados fictícios. Assim ninguém deixa dados reais esquecidos ali.
+ * Se o banco estiver num estado inválido ao ligar (migration interrompida), ele é recriado.
  */
 @Configuration
 @Profile("demo")
@@ -23,6 +27,20 @@ public class RestauracaoDemo {
 
     public RestauracaoDemo(Flyway flyway) {
         this.flyway = flyway;
+    }
+
+    /** Como a demo só tem dados fictícios, recriar o banco é sempre seguro. */
+    @Bean
+    FlywayMigrationStrategy migrarOuRecriar() {
+        return fw -> {
+            try {
+                fw.migrate();
+            } catch (FlywayException e) {
+                log.warn("Banco da demonstração em estado inválido ({}). Recriando.", e.getMessage());
+                fw.clean();
+                fw.migrate();
+            }
+        };
     }
 
     @Scheduled(cron = "${ruralmed.demo.restauracao}", zone = "America/Sao_Paulo")

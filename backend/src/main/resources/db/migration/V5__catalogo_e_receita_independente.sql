@@ -14,11 +14,11 @@ JOIN laudo l ON l.id = r.laudo_id
 SET r.dossie_id = l.dossie_id,
     r.medico_id = l.medico_id;
 
-ALTER TABLE receita
-    MODIFY dossie_id BIGINT NOT NULL,
-    MODIFY medico_id BIGINT NOT NULL,
-    MODIFY laudo_id BIGINT NULL,
-    ADD CONSTRAINT fk_receita_dossie FOREIGN KEY (dossie_id) REFERENCES dossie(id),
-    ADD CONSTRAINT fk_receita_medico FOREIGN KEY (medico_id) REFERENCES medico(usuario_id);
+-- Comandos separados: o TiDB (banco da demo online) não altera a mesma coluna duas vezes num só ALTER.
+ALTER TABLE receita MODIFY dossie_id BIGINT NOT NULL;
+ALTER TABLE receita MODIFY medico_id BIGINT NOT NULL;
+ALTER TABLE receita MODIFY laudo_id BIGINT NULL;
+ALTER TABLE receita ADD CONSTRAINT fk_receita_dossie FOREIGN KEY (dossie_id) REFERENCES dossie(id);
+ALTER TABLE receita ADD CONSTRAINT fk_receita_medico FOREIGN KEY (medico_id) REFERENCES medico(usuario_id);
 
 CREATE INDEX ix_receita_dossie ON receita (dossie_id, assinada_em);
