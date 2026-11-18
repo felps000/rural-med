@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/*
+ * Tokens do RuralMed. Paleta derivada da marca: verde-floresta, osso e musgo.
+ * O âmbar é semântico (caso prioritário), nunca decorativo.
+ */
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-osso: #f4f1ea;
+  --color-superficie: #fbfaf6;
+  --color-tinta: #14231d;
+  --color-tinta-suave: #4b5b53;
+  --color-floresta: #1f4e3d;
+  --color-floresta-escura: #0f2a20;
+  --color-musgo: #a9cf7a;
+  --color-ambar: #9a5b0a;
+  --color-ambar-fundo: #fff1d9;
+  --color-linha: #dcd7cb;
+
+  --ease-saida: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --shadow-e1: 0 1px 2px rgb(20 35 29 / 0.06), 0 4px 12px rgb(20 35 29 / 0.06);
+  --shadow-e2: 0 2px 6px rgb(20 35 29 / 0.08), 0 18px 40px rgb(20 35 29 / 0.12);
+  --shadow-e3: 0 6px 16px rgb(10 25 18 / 0.18), 0 40px 90px rgb(10 25 18 / 0.28);
+}
+
+@layer base {
+  html {
+    background: var(--color-osso);
+    color: var(--color-tinta);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--color-floresta) var(--color-osso);
+  }
+  body {
+    font-family: var(--font-sans);
+    caret-color: var(--color-floresta);
+  }
+  ::selection {
+    background: var(--color-musgo);
+    color: var(--color-floresta-escura);
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+    letter-spacing: -0.035em;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-floresta);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grão sutil: evita faixas de cor em fundos escuros e dá "luz de ambiente". */
+.grao::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes entrar {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
