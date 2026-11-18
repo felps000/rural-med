@@ -3,6 +3,7 @@ package br.mackenzie.ruralmed.laudo;
 import br.mackenzie.ruralmed.auth.AuthService;
 import br.mackenzie.ruralmed.cadastro.Cid;
 import br.mackenzie.ruralmed.cadastro.CidRepository;
+import br.mackenzie.ruralmed.comum.AcessoNegadoException;
 import br.mackenzie.ruralmed.comum.RegraNegocioException;
 import br.mackenzie.ruralmed.comum.RegrasDeNegocio;
 import br.mackenzie.ruralmed.triagem.Dossie;
@@ -49,6 +50,10 @@ public class LaudoService {
                 .orElseThrow(() -> new RegraNegocioException("Dossiê não encontrado"));
         if (dossie.getStatus() != StatusDossie.ENCAMINHADO) {
             throw new RegraNegocioException("Só é possível dar laudo a casos encaminhados");
+        }
+        if (dossie.getEspecialidade() == null
+                || !dossie.getEspecialidade().getId().equals(sessao.especialidadeId())) {
+            throw new AcessoNegadoException("O médico só pode dar laudo em casos da própria especialidade");
         }
         if (form.parecer() == null || form.parecer().isBlank()) {
             throw new RegraNegocioException("Escreva o parecer");

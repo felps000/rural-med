@@ -3,6 +3,8 @@ package br.mackenzie.ruralmed.laudo;
 import br.mackenzie.ruralmed.auth.AuthService;
 import br.mackenzie.ruralmed.cadastro.Cid;
 import br.mackenzie.ruralmed.cadastro.CidRepository;
+import br.mackenzie.ruralmed.cadastro.Especialidade;
+import br.mackenzie.ruralmed.comum.AcessoNegadoException;
 import br.mackenzie.ruralmed.comum.RegraNegocioException;
 import br.mackenzie.ruralmed.triagem.Dossie;
 import br.mackenzie.ruralmed.triagem.DossieRepository;
@@ -46,6 +48,9 @@ class LaudoServiceTest {
         sessao = new AuthService.Sessao("teste", usuario, null, 1L);
         dossie = new Dossie();
         dossie.setStatus(StatusDossie.ENCAMINHADO);
+        Especialidade cardiologia = new Especialidade();
+        cardiologia.setId(1L);
+        dossie.setEspecialidade(cardiologia);
         medico = new Medico();
         medico.setCrmAtivo(true);
         medico.setCrm("123456");
@@ -96,6 +101,19 @@ class LaudoServiceTest {
     @Nested
     @DisplayName("Emissao recusada")
     class Falhas {
+        @Test
+        void deveRecusarCasoDeOutraEspecialidade() {
+            Especialidade dermatologia = new Especialidade();
+            dermatologia.setId(2L);
+            dossie.setEspecialidade(dermatologia);
+
+            assertThatThrownBy(() -> service.emitir(1L,
+                    new LaudoService.LaudoForm("Parecer", "I20.9", null, false), sessao))
+                    .isInstanceOf(AcessoNegadoException.class)
+                    .hasMessage("O médico só pode dar laudo em casos da própria especialidade");
+            verify(laudos, never()).save(any());
+        }
+
         @ParameterizedTest
         @EnumSource(value = StatusDossie.class, names = "ENCAMINHADO", mode = EnumSource.Mode.EXCLUDE)
         void deveRecusarCasoNaoEncaminhadoOuJaConcluido(StatusDossie status) {
